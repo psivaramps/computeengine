@@ -1,0 +1,14 @@
+pipeline {
+ agent any 
+
+	
+	stages {
+				
+		stage ('Creating a computeengine') {
+			steps {
+			sh 'gcloud compute instances create instance-1 --project=gcp-sivaram --zone=us-west4-b --machine-type=e2-micro --network-interface=network-tier=PREMIUM,subnet=default'
+			
+			}
+		}
+    }
+    }
