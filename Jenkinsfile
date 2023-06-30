@@ -1,99 +1,72 @@
 pipeline {
-  agent any
-environment {
-    SVC_ACCOUNT_KEY = credentials('dev-auth')
+    agent any
+
+    environment {
+    DEV_SVC_ACCOUNT_KEY = credentials('dev-auth')
+    UAT_SVC_ACCOUNT_KEY = credentials('uat-auth')
+    PROD_SVC_ACCOUNT_KEY = credentials('prod-auth')
   }
+     
     stages {
-        
-      stage('Set creds') {
-            steps {
-              
-                sh 'echo $SVC_ACCOUNT_KEY | base64 -d > ./jenkins.json'
-		            sh 'pwd'
-             
-            }
-        }
-  //stages {
-    //stage("pipeline {
-  //agent any
-
-  //stages {
-    stage("Create VM in Dev") {
-      steps {
-        sh 'gcloud compute instances create vm-develop-1 --project sivaram-dev-382816 --zone us-central1-a'
-         // sleep 10
-          //sh """
-          sh 'apt update'
-          sh 'sudo su'
-	  sh 'apt update '
-	  sh 'apt -y install apache2'
-	  sh 'sudo service apache2 start' 
-	  sh 'sudo update-rc.d apache2 enable'
-	  sh 'echo "Hello World" > /var/www/html/index.html'
-	  sh 'echo "Hello world from $(hostname) $(hostname -I)" > /var/www/html/index.html'
-         // """
-// """
-      }
+	stage('Deploy on DEV') {
+	 steps {
+    sh 'echo $DEV_SVC_ACCOUNT_KEY | base64 -d > dev.json'
+    sh 'cd Jenkins'		 
+    sh 'gcloud auth activate-service-account env-develop-demo@env-develop-demo.iam.gserviceaccount.com --key-file=dev.json' 
+    sh 'gcloud config set project env-develp-demo'
+    sh 'gcloud compute instances create springapp --zone=us-central1-a --tags=http-server --metadata-from-file=startup-script=./scripts/startup-script.sh'
+    sh "gcloud compute instances describe springapp --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)' > dev.txt"
+	  sh 'cat dev.txt'    
     }
-
-    stage("Health Dev") {
-      steps {
-	   sh 'curl http://$(hostname -I)'
-        // Do some work on the VM
-      }
-    }
-
-    stage("Create VM in UAT") {
-      steps {
-        //sh """
-          sh 'compute instances create vm-uat-1 --project sivaram-dev-382816 --zone us-central1-a'
-          //sleep 10
-          // sh """
-          sh 'apt update'
-          sh 'sudo su'
-	  sh 'apt update '
-	  sh 'apt -y install apache2'
-	  sh 'sudo service apache2 start' 
-	  sh 'sudo update-rc.d apache2 enable'
-	  sh 'echo "Hello World" > /var/www/html/index.html'
-	  sh 'echo "Hello world from $(hostname) $(hostname -I)" > /var/www/html/index.html'
-
-          //"""
-       // """
-      }
-    }
-	stage("Health-UAT") {
-      steps {
-	   sh 'curl http://$(hostname -I)'
-        // Do some work on the VM
-      }
-    }
-	stage("Create VM in Prod") {
-      steps {
-        //sh """
-          sh 'gcloud compute instances create vm-prod-1 --project sivaram-dev-382816 --zone us-central1-a'
-          //sleep 10
-          // """
-          sh 'apt update'
-          sh 'sudo su'
-	  sh 'apt update '
-	  sh 'apt -y install apache2'
-	  sh 'sudo service apache2 start' 
-	  sh 'sudo update-rc.d apache2 enable'
-	  sh 'echo "Hello World" > /var/www/html/index.html'
-	  sh 'echo "Hello world from $(hostname) $(hostname -I)" > /var/www/html/index.html'
-
-          //"""
-       // """
-      }
-    }
-	stage("Health-Prod") {
-      steps {
-	   sh 'curl http://$(hostname -I)'
-        // Do some work on the VM
-      }
-    }
-  }
-}
- //   }
+    }   
+    
   
+  stage('DEV App health check') {
+	 steps {
+            sh 'sleep 40'
+	    sh 'curl http://$(cat dev.txt)'
+    
+    }
+    }
+      
+      stage('Deploy on UAT') {
+	 steps {
+    
+      sh 'echo $UAT_SVC_ACCOUNT_KEY | base64 -d > uat.json'
+      sh 'gcloud auth activate-service-account siva-jenkins@sivaram-dev-382816.iam.gserviceaccount.com --key-file=uat.json'
+      sh 'gcloud config set project sivaram-dev'
+      sh 'gcloud compute instances create springapp --zone=us-central1-a --tags=http-server --metadata-from-file=startup-script=./scripts/startup-script.sh'
+      sh "gcloud compute instances describe springapp --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)' > uat.txt"
+	    sh 'cat uat.txt'
+        
+    }
+    }
+       stage('UAT App health check') {
+	 steps {
+            sh 'sleep 40'
+	    sh 'curl http://$(cat uat.txt)'
+    
+    }
+    }
+      
+      stage('Deploy on PROD') {
+	 steps {
+    
+      sh 'echo $PROD_SVC_ACCOUNT_KEY | base64 -d > prod.json'
+      sh 'gcloud auth activate-service-account env-prod-demo@env-prod-demo.iam.gserviceaccount.com --key-file=prod.json'
+      sh 'gcloud config set project env-prod-demo'
+      sh 'gcloud compute instances create springapp --zone=us-central1-a --tags=http-server --metadata-from-file=startup-script=./scripts/startup-script.sh'
+      sh "gcloud compute instances describe springapp --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)' > prod.txt"
+	    sh 'cat prod.txt'
+        
+    }
+    }
+       stage('PROD App health check') {
+	 steps {
+            sh 'sleep 40'
+	    sh 'curl http://$(cat prod.txt)'
+    
+    }
+    }
+   }
+}
