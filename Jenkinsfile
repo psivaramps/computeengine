@@ -1,14 +1,97 @@
 pipeline {
- agent any 
+  agent any
+environment {
+    SVC_ACCOUNT_KEY = credentials('dev-auth')
+  }
+    stages {
+        
+      stage('Set creds') {
+            steps {
+              
+                sh 'echo $SVC_ACCOUNT_KEY | base64 -d > ./jenkins.json'
+		            sh 'pwd'
+             
+            }
+        }
+  //stages {
+    //stage("pipeline {
+  //agent any
 
-	
-	stages {
-				
-		stage ('Creating a computeengine') {
-			steps {
-			sh 'gcloud compute instances create gce-vm-dev1 --project=sivaram-dev-382816 --zone=us-west4-b --machine-type=e2-small --network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=default --metadata=startup-script=#!/bin/bash$'\n'apt\ update\ $'\n'apt\ -y\ install\ apache2$'\n'echo\ \"Hello\ world\ from\ \$\(hostname\)\ \$\(hostname\ -I\)\"\ \>\ /var/www/html/index.html$'\n' --maintenance-policy=MIGRATE --provisioning-model=STANDARD --service-account=47244189395-compute@developer.gserviceaccount.com  --tags=http-server --create-disk=auto-delete=yes,boot=yes,device-name=gce-vm-dev,image=projects/debian-cloud/global/images/debian-11-bullseye-v20230615,mode=rw,size=10,type=projects/sivaram-dev-382816/zones/us-west4-b/diskTypes/pd-balanced --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --labels=env=dev,goog-ec-src=vm_add-gcloud --reservation-affinity=any'
-			
-			}
-		}
+  stages {
+    stage("Create VM in Dev") {
+      steps {
+        sh """
+          gcloud compute instances create vm-develop-1 --project env-develop-demo --zone us-central1-a
+         // sleep 10
+          sh """
+            apt-get update
+            sudo su 
+			apt update 
+			apt -y install apache2 
+			sudo service apache2 start 
+			sudo update-rc.d apache2 enable
+			echo "Hello World" > /var/www/html/index.html
+			echo "Hello world from $(hostname) $(hostname -I)" > /var/www/html/index.html
+          """
+        """
+      }
     }
+
+    stage("Health Dev") {
+      steps {
+	   curl http://$(hostname -I)
+        // Do some work on the VM
+      }
+    }
+
+    stage("Create VM in UAT") {
+      steps {
+        sh """
+          gcloud compute instances create vm-uat-1 --project env-uat-demo --zone us-central1-a
+          //sleep 10
+          sh """
+            apt-get update
+            sudo su 
+			apt update 
+			apt -y install apache2 
+			sudo service apache2 start 
+			sudo update-rc.d apache2 enable
+			echo "Hello World" > /var/www/html/index.html
+			echo "Hello world from $(hostname) $(hostname -I)" > /var/www/html/index.html
+          """
+        """
+      }
+    }
+	stage("Health-UAT") {
+      steps {
+	   curl http://$(hostname -I)
+        // Do some work on the VM
+      }
+    }
+	stage("Create VM in Prod") {
+      steps {
+        sh """
+          gcloud compute instances create vm-prod-1 --project env-develop-demo --zone us-central1-a
+          //sleep 10
+          sh """
+            apt-get update
+            sudo su 
+			apt update 
+			apt -y install apache2 
+			sudo service apache2 start 
+			sudo update-rc.d apache2 enable
+			echo "Hello World" > /var/www/html/index.html
+			echo "Hello world from $(hostname) $(hostname -I)" > /var/www/html/index.html
+          """
+        """
+      }
+    }
+	stage("Health-Prod") {
+      steps {
+	   curl http://$(hostname -I)
+        // Do some work on the VM
+      }
+    }
+  }
+}
     }
