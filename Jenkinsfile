@@ -20,7 +20,7 @@ environment {
   //stages {
     stage("Create VM in Dev") {
       steps {
-        sh 'gcloud compute instances create vm-develop-1 --project env-develop-demo --zone us-central1-a'
+        sh 'gcloud compute instances create vm-develop-1 --project sivaram-dev-382816 --zone us-central1-a'
          // sleep 10
           //sh """
           sh 'apt update'
@@ -46,7 +46,7 @@ environment {
     stage("Create VM in UAT") {
       steps {
         //sh """
-          sh 'compute instances create vm-uat-1 --project env-uat-demo --zone us-central1-a'
+          sh 'compute instances create vm-uat-1 --project sivaram-dev-382816 --zone us-central1-a'
           //sleep 10
           // sh """
           sh 'apt update'
@@ -71,7 +71,7 @@ environment {
 	stage("Create VM in Prod") {
       steps {
         //sh """
-          sh 'gcloud compute instances create vm-prod-1 --project env-develop-demo --zone us-central1-a'
+          sh 'gcloud compute instances create vm-prod-1 --project sivaram-dev-382816 --zone us-central1-a'
           //sleep 10
           // """
           sh 'apt update'
